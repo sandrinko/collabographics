@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Memory walls — a design probe</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Archivo:wght@600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap');
+
+  :root{
+    --paper:#EEF0F5;
+    --ink:#1C2130;
+    --ink-soft:#5A6274;
+    --card:#FFFFFF;
+    --line:#D8DCE6;
+    --accent:#3F3D9E;
+    --accent-soft:#E4E3F6;
+    --inside:#1D7A5F;
+    --inside-soft:#E1F0EA;
+    --outside:#98A0B3;
+    --boundary:#A16207;
+    --boundary-soft:#FBF0D9;
+    --mono:'IBM Plex Mono', ui-monospace, monospace;
+    --display:'Archivo', system-ui, sans-serif;
+    --ui:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html{scroll-behavior:smooth;}
+  body{
+    background:var(--paper);
+    color:var(--ink);
+    font-family:var(--ui);
+    line-height:1.5;
+    min-height:100vh;
+  }
+  :focus-visible{outline:2px solid var(--accent); outline-offset:2px; border-radius:4px;}
+
+  /* ---------- instrument frame ---------- */
+  .frame{max-width:1080px; margin:0 auto; padding:28px 20px 56px;}
+
+  .probe-head{
+    display:flex; align-items:flex-end; justify-content:space-between;
+    gap:24px; flex-wrap:wrap;
+    border-bottom:2px solid var(--ink);
+    padding-bottom:20px;
+  }
+  .eyebrow{
+    font-family:var(--mono); font-size:11px; letter-spacing:.14em;
+    text-transform:uppercase; color:var(--accent); margin-bottom:10px;
+  }
+  h1{
+    font-family:var(--display); font-weight:800;
+    font-size:clamp(26px, 4.4vw, 40px); letter-spacing:-0.02em; line-height:1.05;
+  }
+  .sub{color:var(--ink-soft); margin-top:10px; max-width:56ch; font-size:15px;}
+
+  .researcher-toggle{
+    display:flex; align-items:center; gap:10px;
+    font-family:var(--mono); font-size:12px; color:var(--ink);
+    cursor:pointer; user-select:none; padding:6px 0;
+  }
+  .switch{
+    width:38px; height:22px; border-radius:11px; background:var(--line);
+    position:relative; transition:background .2s; flex:none;
+    border:1px solid #C6CBD8;
+  }
+  .switch::after{
+    content:''; position:absolute; top:2px; left:2px; width:16px; height:16px;
+    border-radius:50%; background:#fff; box-shadow:0 1px 2px rgba(0,0,0,.25);
+    transition:transform .2s;
+  }
+  .researcher-toggle input{position:absolute; opacity:0; pointer-events:none;}
+  .researcher-toggle input:checked + .switch{background:var(--accent);}
+  .researcher-toggle input:checked + .switch::after{transform:translateX(16px);}
+  .researcher-toggle input:focus-visible + .switch{outline:2px solid var(--accent); outline-offset:2px;}
+
+  /* ---------- variant tabs ---------- */
+  .tabs{display:flex; gap:8px; margin:22px 0 26px; flex-wrap:wrap;}
+  .tab{
+    font-family:var(--display); font-weight:700; font-size:14px;
+    border:1.5px solid var(--ink); background:transparent; color:var(--ink);
+    padding:10px 16px; border-radius:8px; cursor:pointer;
+    display:flex; align-items:baseline; gap:8px;
+    transition:background .15s, color .15s;
+  }
+  .tab small{font-family:var(--mono); font-weight:400; font-size:11px; color:var(--ink-soft);}
+  .tab[aria-selected="true"]{background:var(--ink); color:#fff;}
+  .tab[aria-selected="true"] small{color:#B8BDD1;}
+
+  /* ---------- stage ---------- */
+  .stage{display:grid; grid-template-columns:minmax(0,440px) minmax(260px,1fr); gap:36px; align-items:start;}
+  @media (max-width:860px){ .stage{grid-template-columns:1fr;} }
+
+  .viewport{position:relative;}
+  .fig-label{
+    font-family:var(--mono); font-size:11px; letter-spacing:.1em;
+    color:var(--ink-soft); margin-bottom:10px; text-transform:uppercase;
+  }
+  .fig-label b{color:var(--accent); font-weight:500;}
+
+  /* ---------- the specimen: chat mock ---------- */
+  .mock{
+    background:var(--card); border:1.5px solid var(--ink);
+    border-radius:16px; overflow:hidden;
+    box-shadow:6px 6px 0 rgba(28,33,48,.08);
+    display:flex; flex-direction:column; height:600px; position:relative;
+  }
+  .mock-head{
+    padding:12px 14px; border-bottom:1px solid var(--line);
+    display:flex; align-items:center; gap:10px; background:#FAFBFD;
+    min-height:52px;
+  }
+  .mock-title{font-size:13px; font-weight:600;}
+  .mock-title span{display:block; font-weight:400; font-size:11px; color:var(--ink-soft);}
+  .mock-body{flex:1; overflow-y:auto; padding:16px 14px; display:flex; flex-direction:column; gap:12px;}
+  .mock-composer{
+    border-top:1px solid var(--line); padding:10px 14px; background:#FAFBFD;
+    display:flex; flex-direction:column; gap:8px;
+  }
+  .composer-box{
+    border:1px solid var(--line); border-radius:10px; padding:10px 12px;
+    color:var(--outside); font-size:13px; background:#fff;
+  }
+
+  .msg{max-width:85%; font-size:13.5px; line-height:1.45; border-radius:12px; padding:10px 12px;}
+  .msg.user{align-self:flex-end; background:var(--ink); color:#fff; border-bottom-right-radius:4px;}
+  .msg.assistant{align-self:flex-start; background:#F1F3F8; border-bottom-left-radius:4px;}
+  .msg .who{
+    display:block; font-family:var(--mono); font-size:10px; letter-spacing:.08em;
+    text-transform:uppercase; margin-bottom:4px; opacity:.65;
+  }
+
+  @media (prefers-reduced-motion: no-preference){
+    .msg.enter, .b-card.enter{animation:rise .35s ease both;}
+    @keyframes rise{from{opacity:0; transform:translateY(8px);} to{opacity:1; transform:none;}}
+  }
+
+  /* Variant A: scope chip + popover */
+  .scope-chip{
+    margin-left:auto; display:flex; align-items:center; gap:6px;
+    font-family:var(--mono); font-size:11px; color:var(--inside);
+    background:var(--inside-soft); border:1px solid #BADCCB;
+    padding:5px 10px; border-radius:999px; cursor:pointer;
+  }
+  .scope-chip .dot{width:7px; height:7px; border-radius:50%; background:var(--inside); flex:none;}
+  .scope-pop{
+    position:absolute; top:56px; right:12px; z-index:5;
+    width:280px; background:#fff; border:1.5px solid var(--ink);
+    border-radius:12px; padding:14px; box-shadow:6px 6px 0 rgba(28,33,48,.10);
+    font-size:12.5px; display:none;
+  }
+  .scope-pop.open{display:block;}
+  .scope-pop h4{font-family:var(--mono); font-size:10px; letter-spacing:.1em; text-transform:uppercase; color:var(--ink-soft); margin-bottom:8px;}
+  .scope-pop ul{list-style:none; display:flex; flex-direction:column; gap:6px; margin-bottom:10px;}
+  .scope-pop li{display:flex; gap:8px; align-items:baseline;}
+  .scope-pop li::before{content:'▸'; color:var(--inside); font-size:10px;}
+  .scope-pop .wall{border-top:1px dashed var(--outside); margin:10px 0; position:relative;}
+  .scope-pop .wall span{
+    position:absolute; top:-8px; left:50%; transform:translateX(-50%);
+    background:#fff; padding:0 8px; font-family:var(--mono); font-size:9px;
+    letter-spacing:.12em; color:var(--outside); text-transform:uppercase;
+  }
+  .scope-pop .out{color:var(--outside);}
+  .scope-pop .out li::before{content:'▸'; color:var(--outside);}
+  .composer-scope{
+    font-family:var(--mono); font-size:10.5px; color:var(--inside);
+    display:flex; align-items:center; gap:6px;
+  }
+  .composer-scope .dot{width:6px; height:6px; border-radius:50%; background:var(--inside);}
+
+  /* Variant B: boundary card */
+  .b-card{
+    align-self:stretch; border:1px solid #E4CE96; background:var(--boundary-soft);
+    border-radius:12px; padding:12px; font-size:12.5px;
+  }
+  .b-card .b-head{
+    font-family:var(--mono); font-size:10px; letter-spacing:.1em;
+    text-transform:uppercase; color:var(--boundary); margin-bottom:6px;
+    display:flex; align-items:center; gap:6px;
+  }
+  .b-card .b-head::before{content:''; width:8px; height:8px; background:var(--boundary); flex:none;
+    clip-path:polygon(50% 0, 100% 100%, 0 100%);}
+  .b-actions{display:flex; gap:8px; margin-top:10px; flex-wrap:wrap;}
+  .b-actions button{
+    font-size:12px; font-family:var(--ui); font-weight:600;
+    border:1px solid var(--boundary); color:var(--boundary); background:#fff;
+    padding:6px 10px; border-radius:8px; cursor:pointer;
+  }
+  .b-actions button.primary{background:var(--boundary); color:#fff;}
+  .replay{
+    margin-left:auto; font-family:var(--mono); font-size:11px;
+    border:1px solid var(--line); background:#fff; color:var(--ink-soft);
+    padding:5px 10px; border-radius:999px; cursor:pointer;
+  }
+
+  /* Variant C: drawer */
+  .drawer-btn{
+    margin-left:auto; font-family:var(--mono); font-size:11px;
+    border:1px solid var(--accent); color:var(--accent); background:var(--accent-soft);
+    padding:5px 10px; border-radius:999px; cursor:pointer;
+  }
+  .drawer{
+    position:absolute; top:0; right:0; bottom:0; width:78%;
+    background:#fff; border-left:1.5px solid var(--ink); z-index:6;
+    transform:translateX(102%); transition:transform .28s ease;
+    padding:16px 14px; overflow-y:auto; box-shadow:-6px 0 18px rgba(28,33,48,.10);
+  }
+  @media (prefers-reduced-motion: reduce){ .drawer{transition:none;} }
+  .drawer.open{transform:none;}
+  .drawer h3{font-family:var(--display); font-size:15px; font-weight:700; margin-bottom:2px;}
+  .drawer .d-sub{font-size:11.5px; color:var(--ink-soft); margin-bottom:14px;}
+  .d-close{
+    position:absolute; top:12px; right:12px; border:none; background:none;
+    font-size:16px; cursor:pointer; color:var(--ink-soft); line-height:1; padding:4px;
+  }
+  .d-group{margin-bottom:14px;}
+  .d-group h4{
+    font-family:var(--mono); font-size:10px; letter-spacing:.1em;
+    text-transform:uppercase; margin-bottom:8px;
+  }
+  .d-group.in h4{color:var(--inside);}
+  .d-group.out h4{color:var(--outside);}
+  .d-row{
+    display:flex; align-items:center; gap:8px; font-size:12.5px;
+    padding:8px 10px; border:1px solid var(--line); border-radius:8px; margin-bottom:6px;
+    background:#fff;
+  }
+  .d-row .meta{display:block; font-size:10.5px; color:var(--ink-soft);}
+  .d-row .eye{
+    margin-left:auto; font-family:var(--mono); font-size:10px;
+    border:1px solid var(--line); border-radius:999px; padding:3px 8px;
+    background:#fff; cursor:pointer; color:var(--inside); flex:none;
+  }
+  .d-row .eye[data-on="false"]{color:var(--outside); text-decoration:line-through;}
+  .d-group.out .d-row{background:#F4F5F9; color:var(--outside); border-style:dashed;}
+  .d-wall{
+    border-top:1.5px dashed var(--outside); margin:16px 0; position:relative;
+  }
+  .d-wall span{
+    position:absolute; top:-9px; left:0; background:#fff; padding-right:10px;
+    font-family:var(--mono); font-size:9px; letter-spacing:.14em; color:var(--outside);
+    text-transform:uppercase;
+  }
+  .d-foot{font-size:11px; color:var(--ink-soft); border-top:1px solid var(--line); padding-top:10px;}
+
+  /* ---------- annotations (researcher mode) ---------- */
+  .marker{
+    position:absolute; z-index:8; width:22px; height:22px; border-radius:50%;
+    background:var(--accent); color:#fff; font-family:var(--mono); font-size:11px;
+    display:none; align-items:center; justify-content:center;
+    box-shadow:0 0 0 3px rgba(63,61,158,.22); cursor:default;
+  }
+  body.researcher .marker{display:flex;}
+  .legend{display:none; margin-top:18px;}
+  body.researcher .legend{display:block;}
+  .legend h4{
+    font-family:var(--mono); font-size:10px; letter-spacing:.12em;
+    text-transform:uppercase; color:var(--accent); margin-bottom:8px;
+  }
+  .legend ol{list-style:none; display:flex; flex-direction:column; gap:8px;}
+  .legend li{
+    font-family:var(--mono); font-size:11.5px; line-height:1.5; color:var(--ink);
+    display:flex; gap:10px;
+  }
+  .legend li .n{
+    flex:none; width:18px; height:18px; border-radius:50%; background:var(--accent);
+    color:#fff; font-size:10px; display:flex; align-items:center; justify-content:center;
+    margin-top:1px;
+  }
+
+  /* ---------- rail ---------- */
+  .rail{padding-top:30px;}
+  .rail-block{margin-bottom:22px;}
+  .rail-block h3{
+    font-family:var(--mono); font-size:10px; letter-spacing:.14em;
+    text-transform:uppercase; color:var(--ink-soft); margin-bottom:6px;
+  }
+  .rail-block h3.q{color:var(--accent);}
+  .rail-block p{font-size:14.5px; max-width:46ch;}
+  .rail-block.thesis p{
+    font-family:var(--display); font-weight:600; font-size:17px; line-height:1.35;
+  }
+
+  /* ---------- field note ---------- */
+  .field-note{
+    margin-top:48px; border-top:2px solid var(--ink); padding-top:18px;
+    display:flex; justify-content:space-between; gap:24px; flex-wrap:wrap;
+  }
+  .field-note p{font-family:var(--mono); font-size:12px; color:var(--ink-soft); max-width:78ch; line-height:1.7;}
+  .field-note p b{color:var(--ink); font-weight:500;}
+</style>
+</head>
+<body>
+<div class="frame">
+
+  <header class="probe-head">
+    <div>
+      <p class="eyebrow">Design probe 01 · Human–AI memory</p>
+      <h1>Where does Claude's memory end?</h1>
+      <p class="sub">Three treatments for making conversational memory scope visible. Same incident — a user discovers a project wall the hard way — three design philosophies.</p>
+    </div>
+    <label class="researcher-toggle">
+      <input type="checkbox" id="researcherMode">
+      <span class="switch" aria-hidden="true"></span>
+      Researcher mode
+    </label>
+  </header>
+
+  <div class="tabs" role="tablist" aria-label="Design variants">
+    <button class="tab" role="tab" aria-selected="true" data-variant="a">A · Ambient scope <small>always show the jurisdiction</small></button>
+    <button class="tab" role="tab" aria-selected="false" data-variant="b">B · Boundary moments <small>show the wall when you hit it</small></button>
+    <button class="tab" role="tab" aria-selected="false" data-variant="c">C · Inspectable memory <small>open the filing cabinet</small></button>
+  </div>
+
+  <main class="stage">
+    <section class="viewport">
+      <p class="fig-label">fig. <b id="figLetter">A</b> — specimen: chat interface, project context</p>
+
+      <!-- ===== VARIANT A ===== -->
+      <div class="mock" id="mock-a">
+        <div class="mock-head">
+          <div class="mock-title">Claude<span>New conversation</span></div>
+          <button class="scope-chip" id="chipA" aria-expanded="false">
+            <span class="dot"></span> Project: Design Research
+          </button>
+        </div>
+        <div class="scope-pop" id="popA">
+          <h4>Claude can see</h4>
+          <ul>
+            <li>1 project file — Claude prompting guide.md</li>
+            <li>Chats inside this project (this is the first)</li>
+            <li>Memory formed inside this project</li>
+          </ul>
+          <div class="wall"><span>the wall</span></div>
+          <ul class="out">
+            <li>214 conversations outside this project</li>
+            <li>Memories from other projects</li>
+          </ul>
+        </div>
+        <div class="mock-body">
+          <div class="msg user"><span class="who">You</span>It's a bit disappointing to hear you ask about my background — I've shared hundreds of pages on this app.</div>
+          <div class="msg assistant"><span class="who">Claude</span>Fair — and the green chip above is the reason. We're inside a project, so I can only see what lives here: one file and this chat. Your hundreds of pages sit outside this wall.</div>
+        </div>
+        <div class="mock-composer">
+          <div class="composer-box">Reply to Claude…</div>
+          <div class="composer-scope"><span class="dot"></span> Claude answers from inside Project: Design Research</div>
+        </div>
+        <span class="marker" style="top:14px; right:150px;">1</span>
+        <span class="marker" style="bottom:16px; left:10px;">2</span>
+        <span class="marker" style="top:14px; left:10px;">3</span>
+      </div>
+
+      <!-- ===== VARIANT B ===== -->
+      <div class="mock" id="mock-b" hidden>
+        <div class="mock-head">
+          <div class="mock-title">Claude<span>New conversation</span></div>
+          <button class="replay" id="replayB">↻ replay</button>
+        </div>
+        <div class="mock-body" id="bodyB"></div>
+        <div class="mock-composer">
+          <div class="composer-box">Reply to Claude…</div>
+        </div>
+        <span class="marker" style="top:210px; left:10px;">1</span>
+        <span class="marker" style="top:300px; left:10px;">2</span>
+        <span class="marker" style="top:172px; right:14px;">3</span>
+      </div>
+
+      <!-- ===== VARIANT C ===== -->
+      <div class="mock" id="mock-c">
+        <div class="mock-head">
+          <div class="mock-title">Claude<span>New conversation</span></div>
+          <button class="drawer-btn" id="drawerBtn">◱ What Claude knows here</button>
+        </div>
+        <div class="mock-body">
+          <div class="msg user"><span class="who">You</span>It's a bit disappointing to hear you ask about my background — I've shared hundreds of pages on this app.</div>
+          <div class="msg assistant"><span class="who">Claude</span>I checked what's in scope before answering — open “What Claude knows here” and you'll see exactly what I can and can't reach from this project. Your pages aren't in it.</div>
+        </div>
+        <div class="mock-composer">
+          <div class="composer-box">Reply to Claude…</div>
+        </div>
+        <div class="drawer" id="drawerC" aria-hidden="true">
+          <button class="d-close" id="drawerClose" aria-label="Close">✕</button>
+          <h3>What Claude knows here</h3>
+          <p class="d-sub">Scope: Project “Design Research”</p>
+          <div class="d-group in">
+            <h4>In scope</h4>
+            <div class="d-row">Claude prompting guide.md<span class="meta">project file</span><button class="eye" data-on="true">seen</button></div>
+            <div class="d-row">This conversation<span class="meta">project chat · live</span><button class="eye" data-on="true">seen</button></div>
+            <div class="d-row">Project memory<span class="meta">empty — first chat here</span><button class="eye" data-on="true">seen</button></div>
+          </div>
+          <div class="d-wall"><span>the wall</span></div>
+          <div class="d-group out">
+            <h4>Out of scope</h4>
+            <div class="d-row">214 conversations outside this project<span class="meta">not visible from here</span></div>
+            <div class="d-row">Memories from other projects<span class="meta">not visible from here</span></div>
+          </div>
+          <p class="d-foot">Scope is set per project. Incognito chats are never remembered anywhere.</p>
+        </div>
+        <span class="marker" style="top:14px; right:190px;">1</span>
+        <span class="marker" style="top:260px; right:14px;">2</span>
+        <span class="marker" style="top:120px; right:14px;">3</span>
+      </div>
+
+      <div class="legend">
+        <h4>Annotations — fig. <span class="legend-letter">A</span></h4>
+        <ol id="legendList"></ol>
+      </div>
+    </section>
+
+    <aside class="rail">
+      <div class="rail-block thesis"><h3>Thesis</h3><p id="railThesis"></p></div>
+      <div class="rail-block"><h3>Tradeoff</h3><p id="railTradeoff"></p></div>
+      <div class="rail-block"><h3 class="q">Test this</h3><p id="railTest"></p></div>
+    </aside>
+  </main>
+
+  <footer class="field-note">
+    <p><b>Field note.</b> Three philosophies, really: prevention (A), cure (B), audit (C). They are not mutually exclusive — the interesting research question is sequencing: which treatment earns its pixels at which stage of the human–AI relationship. Probe built as a reaction instrument, not a recommendation. — with Claude, 7 Jul 2026</p>
+  </footer>
+</div>
+
+<script>
+(function(){
+  var DATA = {
+    a: {
+      thesis: "Orientation should be ambient. A persistent scope chip keeps the current jurisdiction in peripheral vision, so the mental model never silently drifts.",
+      tradeoff: "Permanent pixels for a rare problem. Persistent cues fade into banner blindness within days — the chip must change state to stay alive.",
+      test: "After a week of use, can people state what the chip means without looking at it? Cued recall vs. recognition; track when it stops being noticed.",
+      legend: [
+        "Persistent jurisdiction chip — peripheral orientation at zero interaction cost. Tap to unfold the full in/out list.",
+        "Scope restated at the point of composition — the wall is visible before you type, not after you're misunderstood.",
+        "Habituation risk lives here: static chrome goes invisible. State changes (color, counts) are what keep it legible."
+      ]
+    },
+    b: {
+      thesis: "People learn boundaries by hitting them. Stay silent until the user references something outside the wall — then mark the breach inline and offer the repair.",
+      tradeoff: "Error-driven learning means the trust break happens before the explanation. Detection is also probabilistic: miss the reference, miss the moment.",
+      test: "Does an inline boundary event repair the mental model, or read as the system making excuses? Staged-breach study with attribution interviews after.",
+      legend: [
+        "The breach is marked inline, in the transcript — at the exact spot where the user's mental model broke.",
+        "Repair actions at the moment of failure: leave the project to search everything, or move the files inside. Cure, not prevention.",
+        "System voice, not Claude's voice — the wall is framed as the product's architecture, not the model's failure."
+      ]
+    },
+    c: {
+      thesis: "Memory is an object, not a mood. A “What Claude knows here” drawer lists every source in scope — and names what's excluded — with controls attached.",
+      tradeoff: "Transparency on demand only serves people who ask. Inspection is not comprehension: a source list is not a mental model.",
+      test: "Who opens the drawer unprompted, and when? Log first-open triggers — hypothesis: openings cluster just after breach-adjacent moments.",
+      legend: [
+        "Memory becomes a noun in the interface — an inspectable object with a stable home, not an invisible behavior.",
+        "The drawer names the excluded, not just the included. A wall drawn from one side is not a wall.",
+        "Control is coupled to transparency: per-source visibility toggles. Seeing without steering is a museum."
+      ]
+    }
+  };
+
+  var current = 'a';
+  var reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  var tabs = document.querySelectorAll('.tab');
+  var mocks = { a: document.getElementById('mock-a'), b: document.getElementById('mock-b'), c: document.getElementById('mock-c') };
+  // Variant C starts visible in markup for no-JS graceful state; hide it now.
+  mocks.b.hidden = true; mocks.c.hidden = true;
+
+  function setVariant(v){
+    current = v;
+    Object.keys(mocks).forEach(function(k){ mocks[k].hidden = (k !== v); });
+    tabs.forEach(function(t){ t.setAttribute('aria-selected', String(t.dataset.variant === v)); });
+    var letter = v.toUpperCase();
+    document.getElementById('figLetter').textContent = letter;
+    document.querySelector('.legend-letter').textContent = letter;
+    document.getElementById('railThesis').textContent = DATA[v].thesis;
+    document.getElementById('railTradeoff').textContent = DATA[v].tradeoff;
+    document.getElementById('railTest').textContent = DATA[v].test;
+    var list = document.getElementById('legendList');
+    list.innerHTML = '';
+    DATA[v].legend.forEach(function(txt, i){
+      var li = document.createElement('li');
+      var n = document.createElement('span'); n.className = 'n'; n.textContent = i + 1;
+      var p = document.createElement('span'); p.textContent = txt;
+      li.appendChild(n); li.appendChild(p); list.appendChild(li);
+    });
+    if (v === 'b') replayB();
+  }
+
+  tabs.forEach(function(t){
+    t.addEventListener('click', function(){ setVariant(t.dataset.variant); });
+  });
+
+  /* researcher mode */
+  document.getElementById('researcherMode').addEventListener('change', function(e){
+    document.body.classList.toggle('researcher', e.target.checked);
+  });
+
+  /* Variant A popover */
+  var chipA = document.getElementById('chipA'), popA = document.getElementById('popA');
+  chipA.addEventListener('click', function(){
+    var open = popA.classList.toggle('open');
+    chipA.setAttribute('aria-expanded', String(open));
+  });
+
+  /* Variant B replay */
+  var bodyB = document.getElementById('bodyB');
+  var bTimers = [];
+  function el(html){ var d = document.createElement('div'); d.innerHTML = html; return d.firstElementChild; }
+  var B_SEQ = [
+    function(){ return el('<div class="msg user enter"><span class="who">You</span>It\u2019s a bit disappointing to hear you ask about my background \u2014 I\u2019ve shared hundreds of pages on this app.</div>'); },
+    function(){ return el('<div class="b-card enter" role="status"><div class="b-head">Boundary — project wall</div>Claude searched this project: <b>0 of your 214 conversations</b> are visible from here. The pages you\u2019re referring to live outside “Design Research”.<div class="b-actions"><button class="primary" type="button">Search everything (leave project)</button><button type="button">Move files into this project</button></div></div>'); },
+    function(){ return el('<div class="msg assistant enter"><span class="who">Claude</span>So the gap isn\u2019t forgetfulness \u2014 it\u2019s jurisdiction. Pick an action above and I\u2019ll answer with your full history in view.</div>'); }
+  ];
+  function replayB(){
+    bTimers.forEach(clearTimeout); bTimers = [];
+    bodyB.innerHTML = '';
+    B_SEQ.forEach(function(make, i){
+      var delay = reduced ? 0 : 600 + i * 900;
+      bTimers.push(setTimeout(function(){
+        bodyB.appendChild(make());
+        bodyB.scrollTop = bodyB.scrollHeight;
+      }, delay));
+    });
+  }
+  document.getElementById('replayB').addEventListener('click', replayB);
+
+  /* Variant C drawer */
+  var drawer = document.getElementById('drawerC');
+  document.getElementById('drawerBtn').addEventListener('click', function(){
+    drawer.classList.add('open'); drawer.setAttribute('aria-hidden', 'false');
+  });
+  document.getElementById('drawerClose').addEventListener('click', function(){
+    drawer.classList.remove('open'); drawer.setAttribute('aria-hidden', 'true');
+  });
+  drawer.querySelectorAll('.eye').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      var on = btn.dataset.on === 'true';
+      btn.dataset.on = String(!on);
+      btn.textContent = on ? 'hidden' : 'seen';
+    });
+  });
+
+  setVariant('a');
+})();
+</script>
+</body>
+</html>

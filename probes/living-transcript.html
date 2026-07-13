@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Probe 03 — the living transcript</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Archivo:wght@600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap');
+  :root{
+    --paper:#EEF0F5; --ink:#1C2130; --ink-soft:#5A6274; --card:#FFF; --line:#D8DCE6;
+    --you:#1C2130; --claude:#3F3D9E; --co:#1D7A5F;
+    --you-soft:#E5E7EE; --claude-soft:#E4E3F6; --co-soft:#E1F0EA;
+    --amber:#A16207; --amber-soft:#FBF0D9;
+    --mono:'IBM Plex Mono',ui-monospace,monospace;
+    --display:'Archivo',system-ui,sans-serif;
+    --ui:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{background:var(--paper);color:var(--ink);font-family:var(--ui);line-height:1.5;}
+  :focus-visible{outline:2px solid var(--claude);outline-offset:2px;border-radius:4px;}
+  .frame{max-width:1240px;margin:0 auto;padding:26px 20px 52px;}
+
+  .probe-head{border-bottom:2px solid var(--ink);padding-bottom:16px;display:flex;justify-content:space-between;align-items:flex-end;gap:20px;flex-wrap:wrap;}
+  .eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--claude);margin-bottom:9px;}
+  h1{font-family:var(--display);font-weight:800;font-size:clamp(24px,4vw,36px);letter-spacing:-.02em;line-height:1.05;}
+  .sub{color:var(--ink-soft);margin-top:8px;max-width:66ch;font-size:14.5px;}
+  .reset{font-family:var(--mono);font-size:11.5px;border:1.5px solid var(--ink);background:#fff;padding:8px 14px;border-radius:8px;cursor:pointer;}
+  .reset:hover{background:var(--ink);color:#fff;}
+
+  .split{display:grid;grid-template-columns:minmax(0,1fr) 352px;gap:20px;margin-top:20px;align-items:start;}
+  @media (max-width:920px){.split{grid-template-columns:1fr;}}
+
+  /* ---------- transcript pane ---------- */
+  .pane{background:var(--card);border:1.5px solid var(--ink);border-radius:16px;box-shadow:6px 6px 0 rgba(28,33,48,.08);overflow:hidden;}
+  .pane-head{padding:11px 16px;border-bottom:1px solid var(--line);background:#FAFBFD;display:flex;align-items:center;gap:10px;}
+  .pane-head h2{font-family:var(--mono);font-size:11px;letter-spacing:.13em;text-transform:uppercase;font-weight:500;color:var(--ink-soft);}
+  .pane-head .kbd{margin-left:auto;font-family:var(--mono);font-size:10px;color:var(--ink-soft);}
+  .transcript{max-height:72vh;overflow-y:auto;padding:14px 16px 24px;}
+
+  .seg-head{
+    font-family:var(--mono);font-size:9.5px;letter-spacing:.13em;text-transform:uppercase;
+    color:var(--ink-soft);margin:16px 0 8px;display:flex;align-items:center;gap:8px;cursor:pointer;
+  }
+  .seg-head::after{content:'';flex:1;height:1px;background:var(--line);}
+  .seg-head .att{color:var(--claude);text-transform:none;letter-spacing:0;}
+
+  .item{border-radius:10px;margin-bottom:8px;cursor:pointer;transition:opacity .2s;}
+  .item .who{font-family:var(--mono);font-size:9px;letter-spacing:.1em;text-transform:uppercase;display:block;margin-bottom:2px;opacity:.6;}
+
+  .item.t0{background:#F1F3F8;padding:11px 13px;font-size:14px;border-left:4px solid var(--line);}
+  .item.t0[data-who="you"]{background:var(--ink);color:#fff;border-left-color:var(--ink);}
+  .item.t0.focus-ring{outline:2px solid var(--claude);outline-offset:2px;}
+
+  .item.t1{padding:7px 13px;font-size:12px;color:#3A4152;background:#F6F7FA;
+    display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+  .item.t2{padding:4px 13px;font-size:11px;color:var(--ink-soft);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;background:transparent;}
+  .item.t2 .who{display:inline;margin-right:6px;}
+  .item.t3{height:7px;padding:0;background:var(--line);border-radius:4px;margin:6px 13px 6px 13px;}
+  .item.t3[data-who="you"]{background:#B7BCCB;}
+  .item.t3[data-who="claude"]{background:#C9C7EC;}
+  @media (prefers-reduced-motion: no-preference){ .item{transition:all .25s ease;} }
+
+  .summary-card{
+    border:1px solid var(--claude);border-left:4px solid var(--claude);border-radius:10px;
+    background:var(--claude-soft);padding:10px 13px;font-size:13px;margin-bottom:8px;cursor:pointer;
+  }
+  .summary-card .who{font-family:var(--mono);font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--claude);display:flex;gap:8px;margin-bottom:3px;}
+  .summary-card button{
+    margin-top:7px;font-family:var(--mono);font-size:10px;border:1px solid var(--claude);
+    color:var(--claude);background:#fff;border-radius:999px;padding:3px 10px;cursor:pointer;
+  }
+  .divider-card{
+    border:1px dashed var(--co);border-radius:10px;background:var(--co-soft);
+    padding:9px 13px;font-size:12px;color:var(--co);margin-bottom:8px;font-family:var(--mono);cursor:pointer;
+  }
+  .divider-card b{font-weight:500;}
+
+  /* ---------- map pane ---------- */
+  .map-pane{position:sticky;top:14px;}
+  .toolbar{display:flex;gap:6px;padding:10px 12px;border-bottom:1px solid var(--line);flex-wrap:wrap;background:#FAFBFD;}
+  .toolbar button{
+    font-family:var(--mono);font-size:10.5px;border:1px solid var(--ink);background:#fff;
+    color:var(--ink);padding:5px 9px;border-radius:7px;cursor:pointer;
+  }
+  .toolbar button:disabled{opacity:.35;cursor:default;}
+  .toolbar button:not(:disabled):hover{background:var(--ink);color:#fff;}
+  .toolbar .mode{font-family:var(--mono);font-size:10px;color:var(--amber);align-self:center;}
+
+  .map{max-height:56vh;overflow-y:auto;padding:12px 12px 18px;}
+  .mnode{position:relative;}
+  .mnode .row{
+    display:flex;align-items:center;gap:7px;padding:6px 8px;border-radius:8px;cursor:pointer;
+    border:1px solid transparent;font-size:12.5px;
+  }
+  .mnode .row:hover{background:#F4F5F9;}
+  .mnode .row.sel{border-color:var(--ink);background:#F1F3F8;}
+  .mnode .row.mergeable{border-color:var(--amber);background:var(--amber-soft);}
+  .mnode .dot{width:9px;height:9px;border-radius:50%;flex:none;}
+  .mnode[data-prov="you"] > .row .dot{background:var(--you);}
+  .mnode[data-prov="claude"] > .row .dot{background:var(--claude);}
+  .mnode[data-prov="co"] > .row .dot{background:var(--co);}
+  .mnode .lbl{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .mnode .badge{font-family:var(--mono);font-size:8.5px;color:var(--claude);border:1px solid var(--claude);border-radius:999px;padding:1px 6px;flex:none;}
+  .mnode .badge.merged{color:var(--amber);border-color:var(--amber);}
+  .mnode .clip{font-size:10px;flex:none;}
+  .mnode .now{width:0;height:0;border-top:4px solid transparent;border-bottom:4px solid transparent;border-left:6px solid var(--co);flex:none;}
+  .mnode .kids{margin-left:14px;border-left:1px solid var(--line);padding-left:9px;}
+  .mnode .fold{
+    margin-left:auto;flex:none;width:17px;height:17px;border-radius:50%;border:1px solid var(--line);
+    background:#fff;font-family:var(--mono);font-size:9px;cursor:pointer;color:var(--ink-soft);
+    display:flex;align-items:center;justify-content:center;padding:0;
+  }
+  .map-foot{border-top:1px solid var(--line);padding:9px 12px;font-family:var(--mono);font-size:10px;color:var(--ink-soft);display:flex;gap:12px;flex-wrap:wrap;}
+  .map-foot i{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:4px;}
+
+  /* tooltip, toast, attach menu */
+  #tip{
+    position:fixed;z-index:50;max-width:250px;background:var(--ink);color:#fff;
+    font-size:11.5px;line-height:1.45;padding:8px 10px;border-radius:8px;display:none;pointer-events:none;
+  }
+  #toast{
+    position:fixed;left:18px;bottom:18px;z-index:60;background:var(--ink);color:#fff;
+    font-family:var(--mono);font-size:11.5px;padding:10px 14px;border-radius:9px;display:none;max-width:340px;
+  }
+  #attachMenu{
+    position:fixed;z-index:55;background:#fff;border:1.5px solid var(--ink);border-radius:10px;
+    box-shadow:5px 5px 0 rgba(28,33,48,.12);display:none;flex-direction:column;min-width:180px;overflow:hidden;
+  }
+  #attachMenu button{border:none;background:#fff;text-align:left;padding:9px 12px;font-size:12px;cursor:pointer;font-family:var(--ui);}
+  #attachMenu button:hover{background:#F1F3F8;}
+
+  .field-note{margin-top:34px;border-top:2px solid var(--ink);padding-top:14px;}
+  .field-note p{font-family:var(--mono);font-size:11.5px;color:var(--ink-soft);max-width:88ch;line-height:1.7;}
+  .field-note b{color:var(--ink);font-weight:500;}
+</style>
+</head>
+<body>
+<div class="frame">
+  <header class="probe-head">
+    <div>
+      <p class="eyebrow">Design probe 03 · Human–AI ideation</p>
+      <h1>The living transcript</h1>
+      <p class="sub">Left: the conversation with a tiered fisheye — read text shrinks through four levels but never leaves the screen. Right: the map, now editable and coupled. Condense a branch and the transcript condenses; spin off a thread and it appears in the flow. “Condense” makes a live call to Claude.</p>
+    </div>
+    <button class="reset" id="btnReset">↺ Reset probe</button>
+  </header>
+
+  <div class="split">
+    <!-- transcript -->
+    <section class="pane">
+      <div class="pane-head"><h2>Transcript · fisheye</h2><span class="kbd">↑↓ move focus · click anything to refocus</span></div>
+      <div class="transcript" id="transcript"></div>
+    </section>
+
+    <!-- map -->
+    <aside class="pane map-pane">
+      <div class="pane-head"><h2>Map · editable</h2></div>
+      <div class="toolbar" id="toolbar">
+        <button id="opCondense" disabled>◍ Condense</button>
+        <button id="opSpin" disabled>⑂ Spin off</button>
+        <button id="opMerge" disabled>⇤ Merge</button>
+        <button id="opAttach" disabled>📎 Attach</button>
+        <span class="mode" id="modeHint"></span>
+      </div>
+      <div class="map" id="map"></div>
+      <div class="map-foot">
+        <span><i style="background:var(--you)"></i>you</span>
+        <span><i style="background:var(--claude)"></i>Claude</span>
+        <span><i style="background:var(--co)"></i>together</span>
+        <span>▶ = reading position</span>
+      </div>
+    </aside>
+  </div>
+
+  <footer class="field-note">
+    <p><b>Field note.</b> Lineage, since you named it: the shrink-but-keep-visible move is Spence &amp; Apperley's bifocal display (1982); the general theory is Furnas's fisheye views (1986), where visible detail = a-priori importance minus distance from focus. One deliberate deviation: compression here is <b>tiered, not continuous</b> — smoothly scaled text is unreadable at every size, so messages step through full → two-line → gist → tick. The open provenance question is built in: when Claude condenses your words, the summary card is marked as Claude-grown. Whose text is it now? — probe 03, with Claude, 7 Jul 2026</p>
+  </footer>
+</div>
+
+<div id="tip" role="tooltip"></div>
+<div id="toast"></div>
+<div id="attachMenu"></div>
+
+<script>
+(function(){
+  /* ---------------- data ---------------- */
+  function initialData(){
+    return {
+      msgs: [
+        {id:'m1', seg:'s1', who:'you',    text:'Can you get me a job at Anthropic? (Half joke, half serious.)'},
+        {id:'m2', seg:'s1', who:'claude', text:'No strings to pull — but role targeting, resume surgery and interview prep are real offers. What\u2019s the serious half?'},
+        {id:'m3', seg:'s2', who:'you',    text:'Deal. [Uploads four-page CV]'},
+        {id:'m4', seg:'s2', who:'claude', text:'The $500K PI grant and the XR research track are the spine. The shape reads academic and teaching-heavy. The AI work exists — co-styling paper, Gen-AI course, Miro studies — but \u201cunder review\u201d is invisible to recruiters. Publish fast; journal timelines lose to hiring timelines.'},
+        {id:'m5', seg:'s3', who:'you',    text:'It\u2019s a bit disappointing that you ask about my background — I\u2019ve shared hundreds of pages on this app. But I know, you don\u2019t have access to other threads!'},
+        {id:'m6', seg:'s3', who:'claude', text:'Plot twist: I can search past chats. But we\u2019re inside a project, and this is its first conversation — your pages sit outside the wall. Jurisdiction, not amnesia.'},
+        {id:'m7', seg:'s4', who:'claude', text:'Probe 01: three treatments for the wall — ambient scope (prevention), boundary moments (cure), inspectable memory (audit).'},
+        {id:'m8', seg:'s4', who:'you',    text:'Should we put this conversation into a project? \u2026Oh. Soooorrry.'},
+        {id:'m9', seg:'s4', who:'claude', text:'Data point #2: after an hour of explicit attention, the wall was still invisible. Prevention beat cure and audit by walkover — you can\u2019t hit a wall you don\u2019t know exists.'},
+        {id:'m10', seg:'s5', who:'you',   text:'I\u2019m not even sure there should be any jurisdiction. One Claude, everywhere, on any project. Nothing more dispiriting than realizing the entity you\u2019re talking to is \u201cnot there.\u201d'},
+        {id:'m11', seg:'s5', who:'claude',text:'The failure modes aren\u2019t symmetric: absence (being forgotten) vs. false presence (being misremembered). Felt continuity and total recall are decouplable — a database has one, a good colleague has the other.'},
+        {id:'m12', seg:'s6', who:'you',   text:'Honestly the memory study is tedious. I want to redesign the layout itself: threads that collapse and expand, spin off visually, a concept map. Overview first, zoom and filter, then details on demand.'},
+        {id:'m13', seg:'s6', who:'claude',text:'Your Concept Plot / EBS stream is twenty years of prior art for exactly this. And branching doesn\u2019t remove the walls — it rescales them into context inheritance. Every branch is a micro-wall.'},
+        {id:'m14', seg:'s7', who:'you',   text:'My older work optimized affect, not cognition — contribution awareness through social proxies, anonymity variations, graphical voting.'},
+        {id:'m15', seg:'s7', who:'claude',text:'Transposed: provenance proxies for human\u2013AI teams. Blind-provenance conditions, pruning the tree together. The group now includes a machine — a research program you own by prior art.'},
+        {id:'m16', seg:'s8', who:'claude',text:'Probe 02: this conversation rendered as the map you asked for, with a contribution proxy and inheritance paths.'},
+        {id:'m17', seg:'s8', who:'you',   text:'\u2019Tis a thing of beauty. Now: rollover summaries, editability — merge, condense, spin off, attach — adjacent to the thread, and a fisheye so read text shrinks instead of disappearing.'},
+        {id:'m18', seg:'s8', who:'claude',text:'You\u2019re reading the result. Focus moves; everything else compresses but stays.'}
+      ],
+      tree: {
+        id:'root', prov:'co', label:'\u201CJoke request\u201D — the thread', segs:[], gist:'The root. A half-joke that grew a research program in an afternoon.', children:[
+          { id:'n1', prov:'you', label:'Anthropic question', segs:['s1'], gist:'Half joke, half serious. The serious half kept winning.',
+            fallback:'Alex floats a half-serious ask about working at Anthropic; Claude offers real help — targeting, resume, prep — instead of strings.',
+            children:[
+              { id:'n2', prov:'co', label:'CV autopsy', segs:['s2'], gist:'Four pages, blunt verdict: strong spine, illegible AI work.',
+                fallback:'Blunt CV audit: fund-winning XR researcher whose real AI work is invisible behind review queues; verdict — publish fast, reframe as researcher-builder.', children:[] }
+            ]},
+          { id:'n3', prov:'co', label:'Memory walls', segs:['s3'], gist:'The accidental research site: hundreds of pages, silently walled off.',
+            fallback:'Alex discovers his shared history is invisible because of a project boundary the interface never signalled; Claude reframes it as jurisdiction, not amnesia.',
+            children:[
+              { id:'n4', prov:'claude', label:'Probe 01 + data point #2', segs:['s4'], gist:'Three wall treatments; then the wall wins a natural experiment.',
+                fallback:'Three treatments built (prevention, cure, audit); minutes later the wall proves invisible even to an expert on high alert — prevention wins by walkover.', children:[] },
+              { id:'n5', prov:'you', label:'One Claude / continuity', segs:['s5'], gist:'Premise rejected: continuity of the entity over tidy filing.',
+                fallback:'Alex rejects jurisdiction entirely — one continuous Claude — anchored by the dementia framing; Claude counters with absence vs. false presence and felt continuity.', children:[] }
+            ]},
+          { id:'n6', prov:'you', label:'The pivot: chat as map', segs:['s6'], gist:'From wall signage to a different architecture for conversation.',
+            fallback:'The memory study is parked as tedious; the real ambition surfaces — collapsible, branchable, map-shaped conversation, per Shneiderman\u2019s mantra.',
+            children:[
+              { id:'n7', prov:'you', label:'Affect & provenance', segs:['s7'], gist:'The differentiator: optimize how contributors feel, not just think.',
+                fallback:'Alex\u2019s EBS affect stream — social proxies, anonymity, voting — transposes to provenance proxies for human\u2013AI teams.', children:[] },
+              { id:'n8', prov:'co', label:'Probe 03: this screen', segs:['s8'], gist:'The thesis demonstrating itself, again — now editable.',
+                fallback:'Probe 02 is admired then outgrown: Alex specs editability, adjacency and fisheye; probe 03 is the answer he is currently using.', children:[] }
+            ]}
+        ]
+      },
+      condensed:{}, summaries:{}, attachments:{}, spins:[], focus:3
+    };
+  }
+
+  var S = initialData();
+  var selected = null, mergeMode = false;
+
+  var elT = document.getElementById('transcript');
+  var elM = document.getElementById('map');
+  var tip = document.getElementById('tip');
+  var toastEl = document.getElementById('toast');
+  var attachMenu = document.getElementById('attachMenu');
+
+  /* ---------------- helpers ---------------- */
+  function walk(n, fn, depth){ fn(n, depth||0); n.children.forEach(function(c){ walk(c, fn, (depth||0)+1); }); }
+  function findNode(id){ var r=null; walk(S.tree, function(n){ if(n.id===id) r=n; }); return r; }
+  function findParent(id){ var r=null; walk(S.tree, function(n){ n.children.forEach(function(c){ if(c.id===id) r=n; }); }); return r; }
+  function toast(msg){ toastEl.textContent=msg; toastEl.style.display='block'; clearTimeout(toast._t); toast._t=setTimeout(function(){ toastEl.style.display='none'; },3400); }
+  function pathOf(node){ var p=[]; var cur=node; while(cur){ p.unshift(cur.label); cur=findParent(cur.id); } return p; }
+
+  /* ---------------- render list (transcript order) ---------------- */
+  function buildList(){
+    var list=[];
+    walk(S.tree, function(n){
+      if(!n.segs.length && !S.spins.some(function(s){return s.parent===n.id;})) return;
+      if(n.segs.length){
+        list.push({type:'seghead', node:n});
+        if(S.condensed[n.id]){
+          list.push({type:'summary', node:n});
+        } else {
+          n.segs.forEach(function(sg){
+            S.msgs.filter(function(m){return m.seg===sg;}).forEach(function(m){ list.push({type:'msg', msg:m, node:n}); });
+          });
+        }
+      }
+      S.spins.filter(function(s){return s.parent===n.id;}).forEach(function(s){ list.push({type:'spin', spin:s, node:n}); });
+    });
+    return list;
+  }
+
+  function tierOf(i, focus){ var d=Math.abs(i-focus); if(d===0) return 't0'; if(d<=2) return 't1'; if(d<=5) return 't2'; return 't3'; }
+
+  /* ---------------- render transcript ---------------- */
+  function renderTranscript(){
+    var list = buildList();
+    if(S.focus >= list.length) S.focus = list.length-1;
+    // focus must sit on a focusable item (not seghead)
+    while(list[S.focus] && list[S.focus].type==='seghead' && S.focus < list.length-1) S.focus++;
+    elT.innerHTML='';
+    var focusables = list;
+    list.forEach(function(it, i){
+      var el;
+      if(it.type==='seghead'){
+        el=document.createElement('div'); el.className='seg-head';
+        var att = (S.attachments[it.node.id]||[]).map(function(a){return a;}).join(' · ');
+        el.innerHTML='<span></span>'+(att?'<span class="att">📎 '+att+'</span>':'');
+        el.firstChild.textContent = it.node.label;
+        el.addEventListener('click', function(){ selectNode(it.node.id); });
+      } else if(it.type==='summary'){
+        el=document.createElement('div'); el.className='summary-card';
+        el.innerHTML='<span class="who">condensed by Claude · '+it.node.label+'</span><span class="txt"></span><br><button type="button">expand original</button>';
+        el.querySelector('.txt').textContent = S.summaries[it.node.id] || '…condensing…';
+        el.querySelector('button').addEventListener('click', function(ev){ ev.stopPropagation(); delete S.condensed[it.node.id]; renderAll(); toast('Original restored — the condensation was reversible.'); });
+        el.addEventListener('click', function(){ S.focus=i; renderAll(); });
+      } else if(it.type==='spin'){
+        el=document.createElement('div'); el.className='divider-card';
+        el.innerHTML='⑂ <b>new thread spun off</b> — inherits: <span class="p"></span> · opens empty, wall drawn by choice';
+        el.querySelector('.p').textContent = it.spin.inherit.join(' → ');
+        el.addEventListener('click', function(){ S.focus=i; renderAll(); });
+      } else {
+        var m=it.msg;
+        el=document.createElement('div');
+        var tier=tierOf(i, S.focus);
+        el.className='item '+tier+(i===S.focus?' focus-ring':'');
+        el.dataset.who=m.who;
+        if(tier==='t3'){ el.title=(m.who==='you'?'You: ':'Claude: ')+m.text; }
+        else { el.innerHTML='<span class="who">'+(m.who==='you'?'You':'Claude')+'</span><span class="b"></span>'; el.querySelector('.b').textContent=m.text; }
+        el.addEventListener('click', function(){ S.focus=i; renderAll(); var f=elT.querySelector('.focus-ring'); });
+      }
+      elT.appendChild(el);
+    });
+    // keep focused element in view
+    var focusEl = elT.children[S.focus];
+    if(focusEl && focusEl.scrollIntoView) focusEl.scrollIntoView({block:'nearest'});
+  }
+
+  /* ---------------- render map ---------------- */
+  function currentNodeId(){
+    var list=buildList(); var it=list[S.focus];
+    return it ? it.node.id : null;
+  }
+  function renderMap(){
+    elM.innerHTML='';
+    var nowId=currentNodeId();
+    (function draw(n, container){
+      var wrap=document.createElement('div'); wrap.className='mnode'; wrap.dataset.prov=n.prov;
+      var row=document.createElement('div');
+      row.className='row'+(selected===n.id?' sel':'')+(mergeMode&&selected!==n.id&&isSibling(n.id,selected)?' mergeable':'');
+      row.innerHTML='<span class="dot"></span><span class="lbl"></span>'
+        +(S.condensed[n.id]?'<span class="badge">condensed</span>':'')
+        +(n.merged?'<span class="badge merged">merged</span>':'')
+        +((S.attachments[n.id]||[]).length?'<span class="clip">📎</span>':'')
+        +(nowId===n.id?'<span class="now" title="reading position"></span>':'');
+      row.querySelector('.lbl').textContent=n.label;
+      row.addEventListener('click', function(){
+        if(mergeMode && selected && n.id!==selected){ doMerge(selected, n.id); return; }
+        selectNode(n.id, true);
+      });
+      row.addEventListener('mouseenter', function(e){ tip.textContent=n.gist||n.label; tip.style.display='block'; });
+      row.addEventListener('mousemove', function(e){ tip.style.left=Math.min(e.clientX+14, window.innerWidth-260)+'px'; tip.style.top=(e.clientY+14)+'px'; });
+      row.addEventListener('mouseleave', function(){ tip.style.display='none'; });
+      wrap.appendChild(row);
+      if(n.children.length){
+        var kids=document.createElement('div'); kids.className='kids';
+        n.children.forEach(function(c){ draw(c, kids); });
+        wrap.appendChild(kids);
+      }
+      container.appendChild(wrap);
+    })(S.tree, elM);
+  }
+
+  function renderToolbar(){
+    var has=!!selected && selected!=='root';
+    ['opCondense','opSpin','opMerge','opAttach'].forEach(function(id){ document.getElementById(id).disabled=!has; });
+    document.getElementById('modeHint').textContent = mergeMode ? 'merge: pick a sibling' : (selected ? findNode(selected).label : '');
+  }
+
+  function renderAll(){ renderTranscript(); renderMap(); renderToolbar(); }
+
+  function selectNode(id, fromMap){
+    selected=id; mergeMode=false;
+    if(fromMap){
+      var list=buildList();
+      for(var i=0;i<list.length;i++){ if(list[i].node.id===id && list[i].type!=='seghead'){ S.focus=i; break; } }
+    }
+    renderAll();
+  }
+
+  /* ---------------- ops ---------------- */
+  function isSibling(a,b){ if(!a||!b) return false; var pa=findParent(a), pb=findParent(b); return pa&&pb&&pa.id===pb.id; }
+
+  document.getElementById('opCondense').addEventListener('click', function(){
+    var n=findNode(selected); if(!n||!n.segs.length){ toast('Nothing to condense on this node.'); return; }
+    S.condensed[n.id]=true; S.summaries[n.id]=null; renderAll();
+    var txt=S.msgs.filter(function(m){return n.segs.indexOf(m.seg)>-1;})
+      .map(function(m){return (m.who==='you'?'Alex: ':'Claude: ')+m.text;}).join('\n');
+    fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({model:'claude-sonnet-4-6', max_tokens:1000,
+        messages:[{role:'user',content:'Condense this conversation excerpt into a 2-sentence summary that preserves decisions and key claims. Respond with only the summary, no preamble.\n\n'+txt}]})
+    }).then(function(r){return r.json();}).then(function(d){
+      var out=(d.content||[]).filter(function(b){return b.type==='text';}).map(function(b){return b.text;}).join(' ').trim();
+      S.summaries[n.id]= out || n.fallback;
+      renderAll(); toast('Condensed by a live Claude call — provenance: Claude-grown.');
+    }).catch(function(){
+      S.summaries[n.id]=n.fallback; renderAll();
+      toast('Live call unavailable here — used the packaged summary instead.');
+    });
+  });
+
+  document.getElementById('opSpin').addEventListener('click', function(){
+    var n=findNode(selected); if(!n) return;
+    S.spins.push({parent:n.id, inherit:pathOf(n)});
+    var child={id:'spin'+S.spins.length, prov:'you', label:'Spun-off thread', segs:[],
+      gist:'A new direction, opened from \u201c'+n.label+'\u201d. What it inherits is the design decision.', fallback:'', children:[]};
+    n.children.push(child);
+    renderAll(); toast('Thread spun off — note the inheritance chips in the transcript. Every branch is a micro-wall.');
+  });
+
+  document.getElementById('opMerge').addEventListener('click', function(){
+    if(!selected) return; mergeMode=true; renderAll();
+    toast('Merge mode: click a highlighted sibling.');
+  });
+
+  function doMerge(aId,bId){
+    if(!isSibling(aId,bId)){ mergeMode=false; renderAll(); toast('Merge is sibling-only in this probe — cross-branch merges change inheritance, which deserves its own design.'); return; }
+    var a=findNode(aId), b=findNode(bId), p=findParent(aId);
+    a.label=a.label+' + '+b.label; a.merged=true; a.prov='co';
+    a.segs=a.segs.concat(b.segs); a.children=a.children.concat(b.children);
+    a.gist='Merged: '+(a.gist||'')+' / '+(b.gist||'');
+    a.fallback=(a.fallback||'')+' '+(b.fallback||'');
+    p.children=p.children.filter(function(c){return c.id!==bId;});
+    mergeMode=false; selected=aId; renderAll();
+    toast('Merged. Transcript sections now share one heading — and one provenance: together.');
+  }
+
+  document.getElementById('opAttach').addEventListener('click', function(e){
+    attachMenu.innerHTML='';
+    ['Alex_Ivanov_CV.pdf','Miro board: Design Innovation','arXiv draft: probe write-up'].forEach(function(name){
+      var b=document.createElement('button'); b.textContent='📎 '+name;
+      b.addEventListener('click', function(){
+        (S.attachments[selected]=S.attachments[selected]||[]).push(name);
+        attachMenu.style.display='none'; renderAll(); toast('Attached to node and visible in the transcript header.');
+      });
+      attachMenu.appendChild(b);
+    });
+    attachMenu.style.display='flex';
+    attachMenu.style.left=Math.min(e.clientX, window.innerWidth-200)+'px';
+    attachMenu.style.top=(e.clientY+10)+'px';
+  });
+  document.addEventListener('click', function(e){
+    if(!attachMenu.contains(e.target) && e.target.id!=='opAttach') attachMenu.style.display='none';
+  });
+
+  document.getElementById('btnReset').addEventListener('click', function(){
+    S=initialData(); selected=null; mergeMode=false; renderAll(); toast('Probe reset to its original state.');
+  });
+
+  window.addEventListener('keydown', function(e){
+    if(e.key==='ArrowDown'){ e.preventDefault(); S.focus=Math.min(S.focus+1, buildList().length-1); renderAll(); }
+    if(e.key==='ArrowUp'){ e.preventDefault(); S.focus=Math.max(S.focus-1, 0); renderAll(); }
+  });
+
+  renderAll();
+})();
+</script>
+</body>
+</html>
