@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Collabographics — Alex Ivanov, PhD · Serious play, made visible</title>
+<meta name="description" content="Alex Ivanov designs how people and AI think together: AI-in-the-loop design education, co-styling agents, and human–AI interaction probes — backed by twenty years of published research on group cognition and interfaces.">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap');
+  :root{
+    --grove:#2D3A2E; --gold:#E8C547; --gold-ink:#8F6B12; --sand:#C4A882; --paper:#F5F1EA;
+    --charcoal:#3C423C; --soft:#5C625C; --line:rgba(45,58,46,.13); --gold-soft:#B8881A; --rule:rgba(45,58,46,.25);
+    --linen:#FAF7F2;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; background:var(--paper); color:var(--grove);
+    font-family:'IBM Plex Sans',sans-serif; -webkit-font-smoothing:antialiased; position:relative;
+  }
+  body::before{
+    content:""; position:fixed; inset:0; z-index:0; pointer-events:none;
+    background-image:linear-gradient(var(--line) 1px,transparent 1px),linear-gradient(90deg,var(--line) 1px,transparent 1px);
+    background-size:23px 23px; background-position:center;
+  }
+  .intro{ max-width:1000px; margin:0 auto; padding:72px 40px 80px; position:relative; z-index:1; }
+  @keyframes rise{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:none;}}
+  .rise{ animation:rise .7s cubic-bezier(.2,.7,.2,1) both; }
+
+  /* ---- hero ---- */
+  .hero{ position:relative; padding-bottom:8px; }
+  .hero::before{
+    content:""; position:absolute; inset:-30px -10px 0; z-index:-1; pointer-events:none;
+    background:radial-gradient(ellipse 78% 66% at 30% 40%, rgba(245,241,234,.97) 0%, rgba(245,241,234,.82) 46%, rgba(245,241,234,0) 78%);
+  }
+  .top{ display:flex; align-items:center; gap:13px; margin-bottom:50px; }
+  .top svg{ width:44px; height:44px; }
+  .top .wm{ font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:19px; letter-spacing:-.02em; }
+  .top .wm .b{ color:var(--sand); }
+  h1{
+    font-family:'Space Grotesk',sans-serif; font-weight:700; text-transform:uppercase;
+    font-size:clamp(30px,5.4vw,46px); line-height:1.02; letter-spacing:-.04em;
+    color:var(--grove); margin:0 0 32px; max-width:17ch;
+  }
+  .lede{ max-width:60ch; }
+  .lede p{ font-size:16.5px; line-height:1.62; color:var(--charcoal); margin:0 0 17px; }
+  .lede .strong{ color:var(--grove); font-weight:500; }
+  .name .a{ color:var(--grove); font-weight:600; } .name .b{ color:var(--sand); font-weight:600; }
+  .closer{ font-family:'Space Grotesk',sans-serif; font-weight:500; font-size:20px; letter-spacing:-.012em; color:var(--grove); margin-top:24px; }
+  .closer .g{ color:var(--gold-soft); }
+
+  /* ---- shared section heading ---- */
+  .kicker{ font-family:'Space Grotesk',sans-serif; font-weight:600; font-size:11px; letter-spacing:.22em; text-transform:uppercase; color:var(--gold-soft); }
+  .sec-h2{ font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:clamp(20px,3vw,26px); letter-spacing:-.02em; color:var(--grove); margin:8px 0 28px; max-width:26ch; }
+
+  /* ---- timeline ---- */
+  .timeline{ margin-top:72px; position:relative; }
+  .timeline::before, .services::before{
+    content:""; position:absolute; inset:-14px -10px; z-index:-1; pointer-events:none;
+    background:radial-gradient(ellipse 92% 82% at 50% 30%, rgba(245,241,234,.9) 0%, rgba(245,241,234,.5) 55%, rgba(245,241,234,0) 85%);
+  }
+  .tl-grid{ display:grid; grid-template-columns:repeat(4,1fr); border-top:1.5px solid var(--rule); }
+  .tl-col{ padding:22px 20px 6px; position:relative; }
+  .tl-col + .tl-col{ border-left:1px solid var(--line); }
+  .tl-col::before{ content:""; position:absolute; top:-5.5px; left:20px; width:9px; height:9px; background:var(--gold); border-radius:2px; }
+  .tl-era{ font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:11px; letter-spacing:.13em; text-transform:uppercase; margin-bottom:12px; }
+  .tl-era .yr{ color:var(--gold-soft); } .tl-era .sep{ color:var(--sand); margin:0 5px; } .tl-era .nm{ color:var(--grove); }
+  .tl-title{ font-family:'Space Grotesk',sans-serif; font-weight:600; font-size:17px; line-height:1.15; color:var(--grove); margin:0 0 5px; }
+  .tl-tag{ font-size:10px; letter-spacing:.08em; text-transform:uppercase; color:var(--sand); font-weight:600; margin-bottom:10px; }
+  .tl-desc{ font-size:13px; line-height:1.55; color:var(--charcoal); margin:0; }
+
+  /* ---- services ---- */
+  .services{ margin-top:60px; position:relative; }
+  .sec-divider{ border-top:1.5px solid var(--rule); margin:0 0 34px; }
+  .svc-grid{ display:grid; grid-template-columns:repeat(2,1fr); border-top:1.5px solid var(--rule); }
+  .svc-col{ padding:24px 22px 10px; position:relative; }
+  .svc-col + .svc-col{ border-left:1px solid var(--line); }
+  .svc-col::before{ content:""; position:absolute; top:-5.5px; left:22px; width:9px; height:9px; background:var(--gold); border-radius:2px; }
+  .svc-label{ font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:11px; letter-spacing:.13em; text-transform:uppercase; margin-bottom:14px; }
+  .svc-label .n{ color:var(--gold-soft); } .svc-label .sep{ color:var(--sand); margin:0 5px; } .svc-label .t{ color:var(--grove); }
+  .svc-title{ font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:21px; line-height:1.12; color:var(--grove); margin:0 0 7px; }
+  .svc-sub{ font-size:10px; letter-spacing:.08em; text-transform:uppercase; color:var(--sand); font-weight:600; margin-bottom:13px; }
+  .svc-body{ font-size:14px; line-height:1.6; color:var(--charcoal); margin:0; max-width:50ch; }
+
+  /* ---- CTA footer ---- */
+  .cta{ position:relative; z-index:1; background:var(--grove); color:var(--linen); overflow:hidden; }
+  .cta::before{
+    content:""; position:absolute; inset:0; pointer-events:none;
+    background-image:linear-gradient(rgba(250,247,242,.06) 1px,transparent 1px),linear-gradient(90deg,rgba(250,247,242,.06) 1px,transparent 1px);
+    background-size:23px 23px; background-position:center;
+  }
+  .cta-inner{ max-width:1000px; margin:0 auto; padding:66px 40px 52px; position:relative; }
+  .cta .kicker{ color:var(--gold); }
+  .cta h2{ font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:clamp(26px,4.4vw,40px); letter-spacing:-.03em; line-height:1.04; color:var(--linen); margin:10px 0 16px; max-width:18ch; }
+  .cta .sub{ font-size:16px; line-height:1.6; color:rgba(250,247,242,.82); max-width:54ch; margin:0; }
+  .cta-actions{ display:flex; align-items:center; gap:16px 26px; flex-wrap:wrap; margin-top:30px; }
+  .btn{ background:var(--gold); color:var(--grove); font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:15px; letter-spacing:-.01em; padding:13px 26px; border-radius:8px; text-decoration:none; display:inline-flex; align-items:center; gap:9px; transition:transform .15s, filter .15s; }
+  .btn:hover{ filter:brightness(1.06); transform:translateY(-1px); }
+  .btn .arr{ font-size:17px; }
+  .cta-meta{ font-size:13px; color:rgba(250,247,242,.68); display:flex; gap:6px 18px; flex-wrap:wrap; }
+  .cta-meta a{ color:rgba(250,247,242,.92); text-decoration:none; border-bottom:1px solid rgba(232,197,71,.5); padding-bottom:1px; }
+  .cta-meta a:hover{ border-bottom-color:var(--gold); }
+  .cta-more{ margin-top:14px; }
+  .cta-more summary{ cursor:pointer; font-size:12.5px; letter-spacing:.02em; color:rgba(250,247,242,.55); list-style:none; display:inline-flex; align-items:center; gap:6px; }
+  .cta-more summary::-webkit-details-marker{ display:none; }
+  .cta-more summary::after{ content:"↓"; color:var(--gold); transition:transform .2s; }
+  .cta-more[open] summary::after{ transform:rotate(180deg); }
+  .cta-more summary:hover{ color:rgba(250,247,242,.85); }
+  .cta-sign{ display:flex; align-items:center; gap:11px; margin-top:48px; padding-top:22px; border-top:1px solid rgba(250,247,242,.14); }
+  .cta-sign svg{ width:34px; height:34px; }
+  .cta-sign .wm{ font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:15px; letter-spacing:-.02em; color:var(--linen); }
+  .cta-sign .wm b{ color:var(--sand); }
+  .cta-sign .tag{ margin-left:auto; font-family:'Space Grotesk',sans-serif; font-weight:500; font-size:12.5px; letter-spacing:-.005em; color:rgba(250,247,242,.6); }
+  .cta-sign .tag .g{ color:var(--gold); }
+
+  @media (max-width:720px){
+    .intro{ padding:48px 24px 56px; }
+    .tl-grid{ grid-template-columns:1fr; }
+    .tl-col + .tl-col{ border-left:none; border-top:1px solid var(--line); }
+    .tl-col{ padding:20px 0 6px; } .tl-col::before{ left:0; }
+    .svc-grid{ grid-template-columns:1fr; }
+    .svc-col + .svc-col{ border-left:none; border-top:1px solid var(--line); }
+    .svc-col{ padding:22px 0 10px; } .svc-col::before{ left:0; }
+    .cta-inner{ padding:48px 24px 40px; }
+    .cta-sign{ flex-wrap:wrap; } .cta-sign .tag{ margin-left:0; width:100%; }
+  }
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="hmark" viewBox="0 0 104 104">
+    <g stroke="#2D3A2E" stroke-width="0.6" opacity="0.12"><line x1="35" y1="8" x2="35" y2="96"/><line x1="69" y1="8" x2="69" y2="96"/><line x1="8" y1="35" x2="96" y2="35"/><line x1="8" y1="69" x2="96" y2="69"/></g>
+    <rect x="9" y="11" width="16" height="16" rx="4" fill="#C4A882" opacity="0.72" transform="rotate(-9 17 19)"/>
+    <path d="M42,6 L54,12 L44,18 Z" fill="#E8C547" opacity="0.85"/>
+    <path d="M76,8 L92,12 L88,26 L74,22 Z" fill="#C4A882" opacity="0.6"/>
+    <circle cx="89" cy="55" r="7" fill="#E8C547" opacity="0.7"/>
+    <path d="M82,78 L94,86 L82,94 L76,82 Z" fill="#C4A882" opacity="0.6"/>
+    <rect x="12" y="75" width="15" height="15" rx="4" fill="#E8C547" opacity="0.68" transform="rotate(7 19 82)"/>
+    <path d="M6,48 L16,52 L8,60 Z" fill="#C4A882" opacity="0.6"/>
+    <polyline points="22,28 40,46 30,62 50,57" fill="none" stroke="#2D3A2E" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="5 4" opacity="0.5"/>
+    <g stroke="#2D3A2E" stroke-width="1.3" stroke-dasharray="3 3" opacity="0.28" fill="none" stroke-linecap="round"><path d="M84,32 L68,46"/><path d="M84,58 L70,58"/></g>
+    <path d="M34,38 L58,30 L76,42 L70,60 L74,78 L50,80 L32,70 L38,52 Z" fill="#2D3A2E"/>
+    <path d="M43,46 L57,41 L66,50 L62,62 L64,72 L48,73 L40,64 L44,53 Z" fill="#E8C547" opacity="0.9"/>
+    <circle cx="54" cy="57" r="4" fill="#FAF7F2" opacity="0.92"/>
+    <circle cx="22" cy="28" r="2.6" fill="#C4A882"/>
+  </symbol>
+  <symbol id="hmark-rev" viewBox="0 0 104 104">
+    <rect x="9" y="11" width="16" height="16" rx="4" fill="#C4A882" opacity="0.85" transform="rotate(-9 17 19)"/>
+    <path d="M42,6 L54,12 L44,18 Z" fill="#E8C547" opacity="0.9"/>
+    <path d="M76,8 L92,12 L88,26 L74,22 Z" fill="#C4A882" opacity="0.7"/>
+    <circle cx="89" cy="55" r="7" fill="#E8C547" opacity="0.8"/>
+    <path d="M82,78 L94,86 L82,94 L76,82 Z" fill="#C4A882" opacity="0.7"/>
+    <rect x="12" y="75" width="15" height="15" rx="4" fill="#E8C547" opacity="0.78" transform="rotate(7 19 82)"/>
+    <path d="M6,48 L16,52 L8,60 Z" fill="#C4A882" opacity="0.7"/>
+    <polyline points="22,28 40,46 30,62 50,57" fill="none" stroke="#FAF7F2" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="5 4" opacity="0.5"/>
+    <g stroke="#FAF7F2" stroke-width="1.3" stroke-dasharray="3 3" opacity="0.3" fill="none" stroke-linecap="round"><path d="M84,32 L68,46"/><path d="M84,58 L70,58"/></g>
+    <path d="M34,38 L58,30 L76,42 L70,60 L74,78 L50,80 L32,70 L38,52 Z" fill="#FAF7F2"/>
+    <path d="M43,46 L57,41 L66,50 L62,62 L64,72 L48,73 L40,64 L44,53 Z" fill="#E8C547" opacity="0.92"/>
+    <circle cx="54" cy="57" r="4" fill="#2D3A2E"/>
+    <circle cx="22" cy="28" r="2.6" fill="#C4A882"/>
+  </symbol>
+</svg>
+
+<div class="intro">
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="top rise">
+      <svg><use href="#hmark"/></svg>
+      <span class="wm">Collabo<span class="b">graphics</span></span>
+    </div>
+    <h1 class="rise" style="animation-delay:.06s">I design how people and AI think together.</h1>
+    <div class="lede rise" style="animation-delay:.12s">
+      <p><span class="strong">Everyone has AI now. Almost nobody thinks with it well</span> &mdash; alone, and even less so as a team. The tools arrived; the interfaces for actually thinking together haven't.</p>
+      <p>That's what I design and test. Studio courses where design teams ideate with AI in the loop on live Miro canvases. Shopping agents that style outfits <em>with</em> you, not for you &mdash; research now cited across the virtual try-on literature. And a series of working probes, built with Claude, that prototype what conversation should look like when one of the minds in it is artificial.</p>
+      <p>I've studied how groups think through interfaces since 2006 &mdash; brainstorming systems, meeting satisfaction, augmented shopping. AI didn't change my question. It added a new mind to the room.</p>
+      <p>I call this <span class="name"><span class="a">Collabo</span><span class="b">graphics</span></span>.</p>
+      <div class="closer">Co-intelligence, <span class="g">made visible.</span></div>
+    </div>
+  </section>
+
+  <!-- TIMELINE -->
+  <section class="timeline rise" style="animation-delay:.18s">
+    <span class="kicker">The Work · 2006—2026</span>
+    <h2 class="sec-h2">Four eras at the interface of group cognition.</h2>
+    <div class="tl-grid">
+      <div class="tl-col">
+        <div class="tl-era"><span class="yr">2006</span><span class="sep">//</span><span class="nm">The Matrix</span></div>
+        <h3 class="tl-title">The Concept Plot</h3>
+        <div class="tl-tag">Asynchronous brainstorming</div>
+        <p class="tl-desc">A spatial grid that maps online brainstorming in two directions at once — so ideas stay legible instead of piling up.</p>
+      </div>
+      <div class="tl-col">
+        <div class="tl-era"><span class="yr">2014</span><span class="sep">//</span><span class="nm">The Pathway</span></div>
+        <h3 class="tl-title">Telematics &amp; Informatics</h3>
+        <div class="tl-tag">Empirical study · N = 126</div>
+        <p class="tl-desc">Statistical modeling that proved a simple thing: when the interface feels good, teams leave their meetings more satisfied.</p>
+      </div>
+      <div class="tl-col">
+        <div class="tl-era"><span class="yr">2024</span><span class="sep">//</span><span class="nm">The Interaction</span></div>
+        <h3 class="tl-title">Virtual Try-On</h3>
+        <div class="tl-tag">Hong Kong &amp; Shanghai</div>
+        <p class="tl-desc">Field research mapping the anxiety and social friction people feel when they choose together, not alone.</p>
+      </div>
+      <div class="tl-col">
+        <div class="tl-era"><span class="yr">2026</span><span class="sep">//</span><span class="nm">Co-Intelligence</span></div>
+        <h3 class="tl-title">Human&ndash;AI Probes</h3>
+        <div class="tl-tag">Built with Claude</div>
+        <p class="tl-desc">Working prototypes of human&ndash;AI ideation — probing how conversation should work when one of the minds is artificial. Live: <a href="probes/memory-walls.html" style="color:inherit">memory walls</a> · <a href="probes/living-transcript.html" style="color:inherit">the living transcript</a> · <a href="probes/casting-nadine.html" style="color:inherit">casting nadine</a>.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- SERVICES -->
+  <section class="services rise" style="animation-delay:.24s">
+    <div class="sec-divider"></div>
+    <span class="kicker">Work With Me · Services</span>
+    <h2 class="sec-h2">Two ways to think together.</h2>
+    <div class="svc-grid">
+      <div class="svc-col">
+        <div class="svc-label"><span class="n">Service 01</span><span class="sep">//</span><span class="t">AI-in-the-Loop Co-Creation</span></div>
+        <h3 class="svc-title">Co-Intelligence Sprints</h3>
+        <div class="svc-sub">Pre-structured Miro canvases + Gen-AI pipelines</div>
+        <p class="svc-body">Stop optimizing past complaints. I run remote sprints on pre-structured Miro canvases where your team ideates with AI in the loop &mdash; and I build working probes and prototypes with Claude that let you feel a future service before you commit to it. The workflows are ones I've tested in the classroom and published; the deliverable is something your team can click, argue with, and own.</p>
+      </div>
+    <div class="svc-col">
+        <div class="svc-label"><span class="n">Service 02</span><span class="sep">//</span><span class="t">Tactile Facilitation · in person, by arrangement</span></div>
+        <h3 class="svc-title">The Strategic Synergy Lab</h3>
+        <div class="svc-sub">Certified LEGO&reg; Serious Play&reg; (LSP)</div>
+        <p class="svc-body">I take abstract corporate strategy out of slides and put it onto the table. Using strict, certified LEGO&reg; Serious Play&reg; protocols, I bypass standard conversational hierarchy and defensive posturing. Your team builds literal, physical three-dimensional models of complex systemic challenges, externalizing hidden cognitive barriers and aligning diverse stakeholder inputs into a single, unified operational vision.</p>
+      </div>
+      </div>
+  </section>
+
+</div>
+
+<!-- CALL TO ACTION FOOTER -->
+<footer class="cta">
+  <div class="cta-inner">
+    <span class="kicker">Start a Conversation</span>
+    <h2>Bring me a problem worth playing with.</h2>
+    <p class="sub">I take on a small number of workshops, sprints, and research collaborations each year — for teams ready to turn scattered thinking into a single, shared outcome.</p>
+    <div class="cta-actions">
+      <a class="btn" href="mailto:alexivan@me.com">Email me <span class="arr">&rarr;</span></a>
+      <div class="cta-meta">
+        <a href="mailto:alexivan@me.com">alexivan@me.com</a>
+        <a href="https://linkedin.com/in/sandrinko">linkedin.com/in/sandrinko</a>
+        <a href="https://scholar.google.com/citations?user=gUwFw5sAAAAJ">Google Scholar &middot; 3,500+ citations</a>
+        <span>Remote &middot; Sofia / Hong Kong</span>
+      </div>
+      <details class="cta-more">
+        <summary>More ways to reach me</summary>
+        <div class="cta-meta" style="margin-top:10px">
+          <a href="https://wa.me/85254693489">WhatsApp &middot; @sandrinko</a>
+          <span>WeChat: sandrinko</span>
+          <a href="https://www.researchgate.net/profile/Alex-Ivanov-11">ResearchGate</a>
+          <a href="https://facebook.com/sandrinko">Facebook</a>
+          <a href="https://instagram.com/sandrinko">Instagram</a>
+        </div>
+      </details>
+    </div>
+    <div class="cta-sign">
+      <svg><use href="#hmark-rev"/></svg>
+      <span class="wm">Collabo<b>graphics</b></span>
+      <span class="tag">Co-intelligence, <span class="g">made visible.</span></span>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>
