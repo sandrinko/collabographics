@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Hi, DaBrain 👋 · Collabographics</title>
+<meta name="description" content="A small hello from Collabographics to DaBrain."/>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap');
+  :root{
+    --grove:#2D3A2E; --gold:#E8C547; --gold-ink:#8F6B12; --sand:#C4A882; --paper:#F5F1EA;
+    --charcoal:#3C423C; --soft:#5C625C; --line:rgba(45,58,46,.13); --gold-soft:#B8881A;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; min-height:100vh; display:flex; align-items:center; justify-content:center;
+    background:var(--paper); color:var(--grove);
+    font-family:'IBM Plex Sans',sans-serif; -webkit-font-smoothing:antialiased; position:relative;
+  }
+  body::before{
+    content:""; position:fixed; inset:0; z-index:0; pointer-events:none;
+    background-image:linear-gradient(var(--line) 1px,transparent 1px),linear-gradient(90deg,var(--line) 1px,transparent 1px);
+    background-size:23px 23px; background-position:center;
+  }
+  @keyframes rise{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:none;}}
+  .card{
+    position:relative; z-index:1; text-align:center; padding:48px 32px;
+    animation:rise .7s cubic-bezier(.2,.7,.2,1) both;
+  }
+  .wave{ font-size:56px; line-height:1; margin-bottom:20px; display:inline-block; }
+  h1{
+    font-family:'Space Grotesk',sans-serif; font-weight:700; text-transform:uppercase;
+    font-size:clamp(32px,6vw,52px); line-height:1.05; letter-spacing:-.04em; margin:0 0 18px;
+  }
+  h1 .b{ color:var(--gold-soft); }
+  p{ max-width:44ch; margin:0 auto; font-size:16.5px; line-height:1.62; color:var(--charcoal); }
+  a{ color:var(--gold-ink); font-weight:500; }
+</style>
+</head>
+<body>
+  <main class="card">
+    <span class="wave">👋</span>
+    <h1>Hi, <span class="b">DaBrain</span></h1>
+    <p>A small hello from <a href="index.html">Collabographics</a> — where serious play is made visible.</p>
+  </main>
+</body>
+</html>
